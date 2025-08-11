@@ -9,7 +9,6 @@ type MoviesResponse = { results: Movie[]; };
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5); }
 
 export default function Game() {
-  const [pool, setPool] = useState<Movie[]>([]);
   const [remaining, setRemaining] = useState<Movie[]>([]);
   const [score, setScore] = useState(0);
   const [question, setQuestion] = useState(0);
@@ -32,8 +31,7 @@ export default function Game() {
       r.json()
     );
     const clean = data.results.filter((m) => m.backdrop_path);
-    setPool((prev) => [...prev, ...clean]);
-    setRemaining(clean);
+    setRemaining((prev) => [...prev, ...clean]);
     return clean;
   }
 
@@ -66,27 +64,23 @@ export default function Game() {
     setSelected("");
     setShowAnswer(false);
     let rem = remaining;
-    let fullPool = pool;
-    if (rem.length === 0) {
-      rem = await loadBatch();
-      if (!rem.length) {
+    if (rem.length < 4) {
+      rem = [...rem, ...(await loadBatch())];
+      if (rem.length < 4) {
         endGame();
         return;
       }
-      fullPool = [...pool, ...rem];
     }
     setLoading(true);
     setTimeLeft(15);
     const idx = Math.floor(Math.random() * rem.length);
     const pick = rem[idx];
     rem = rem.filter((_, i) => i !== idx);
+    const others = shuffle(rem).slice(0, 3);
+    rem = rem.filter((m) => !others.includes(m));
     setRemaining(rem);
     setCorrect(pick.title);
-
-    const others = shuffle(
-      fullPool.filter((m) => m.id !== pick.id).map((m) => m.title)
-    ).slice(0, 3);
-    setOptions(shuffle([pick.title, ...others]));
+    setOptions(shuffle([pick.title, ...others.map((m) => m.title)]));
     const path = encodeURIComponent(pick.backdrop_path || "");
     const url = `/api/img?path=${path}&w=1280`;
     setImgUrl(url);
@@ -114,7 +108,7 @@ export default function Game() {
     if (isCorrect) {
       setScore((s) => s + 1);
     }
-    const delay = isCorrect ? 100 : 3000;
+    const delay = isCorrect ? 80 : 3000;
     setTimeout(() => {
       if (isCorrect) {
         startRound();
@@ -140,13 +134,14 @@ export default function Game() {
     setNickname(tempName.trim());
   }
 
-  function restart() {
+  async function restart() {
     setScore(0);
     setQuestion(0);
     setTimeLeft(15);
     setGameOver(false);
     setLives(3);
-    setRemaining(pool);
+    setRemaining([]);
+    await loadBatch();
     startRound();
   }
   if (!nickname) {
