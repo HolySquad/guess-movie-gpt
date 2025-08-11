@@ -9,11 +9,14 @@ type MoviesResponse = { results: Movie[]; };
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5); }
 
 export default function Game() {
+  const ROUND_TIME = 15;
+  const MAX_POINTS = 10;
+
   const [pool, setPool] = useState<Movie[]>([]);
   const [remaining, setRemaining] = useState<Movie[]>([]);
   const [score, setScore] = useState(0);
   const [question, setQuestion] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(15);
+  const [timeLeft, setTimeLeft] = useState(ROUND_TIME);
   const [imgUrl, setImgUrl] = useState<string>("");
   const [options, setOptions] = useState<string[]>([]);
   const [correct, setCorrect] = useState<string>("");
@@ -59,7 +62,7 @@ export default function Game() {
       return;
     }
     setLoading(true);
-    setTimeLeft(15);
+    setTimeLeft(ROUND_TIME);
     const idx = Math.floor(Math.random() * remaining.length);
     const pick = remaining[idx];
     setRemaining((prev) => prev.filter((_, i) => i !== idx));
@@ -75,7 +78,10 @@ export default function Game() {
   }
 
   function guess(title: string) {
-    if (title === correct) setScore((s) => s + 1);
+    if (title === correct) {
+      const points = Math.round(((timeLeft - 1) / (ROUND_TIME - 1)) * (MAX_POINTS - 1) + 1);
+      setScore((s) => s + points);
+    }
     startRound();
   }
 
@@ -95,7 +101,7 @@ export default function Game() {
   function restart() {
     setScore(0);
     setQuestion(0);
-    setTimeLeft(15);
+    setTimeLeft(ROUND_TIME);
     setGameOver(false);
     setRemaining(pool);
     startRound();
@@ -152,7 +158,7 @@ export default function Game() {
               key={timeLeft}
               className="h-full bg-indigo-500"
               initial={{ width: "100%" }}
-              animate={{ width: `${(timeLeft / 15) * 100}%` }}
+              animate={{ width: `${(timeLeft / ROUND_TIME) * 100}%` }}
               transition={{ ease: "linear", duration: 1 }}
             />
           </div>
