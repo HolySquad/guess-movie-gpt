@@ -10,6 +10,7 @@ type MoviesResponse = { results: Movie[]; };
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5); }
 
 export default function Game() {
+  const POOL_KEY = "moviePool";
   const [remaining, setRemaining] = useState<Movie[]>([]);
   const [score, setScore] = useState(0);
   const [question, setQuestion] = useState(0);
@@ -29,19 +30,42 @@ export default function Game() {
   const [lives, setLives] = useState(3);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  function savePool(pool: Movie[]) {
+    localStorage.setItem(POOL_KEY, JSON.stringify(pool));
+  }
+
   async function loadBatch() {
     const data: MoviesResponse = await fetch("/api/tmdb/movies").then((r) =>
       r.json()
     );
     const clean = data.results.filter((m) => m.backdrop_path);
-    setRemaining((prev) => [...prev, ...clean]);
+    setRemaining((prev) => {
+      const merged = [...prev, ...clean];
+      savePool(merged);
+      return merged;
+    });
     return clean;
   }
 
   useEffect(() => {
     const storedName = localStorage.getItem("nickname");
     if (storedName) setNickname(storedName);
-    loadBatch();
+
+    const cached = localStorage.getItem(POOL_KEY);
+    if (cached) {
+      try {
+        const parsed: Movie[] = JSON.parse(cached);
+        setRemaining(parsed);
+        if (parsed.length < 4) {
+          loadBatch();
+        }
+      } catch {
+        loadBatch();
+      }
+    } else {
+      loadBatch();
+    }
+
     fetchScores();
   }, []);
 
@@ -91,6 +115,7 @@ export default function Game() {
     const others = shuffle(rem).slice(0, 3);
     rem = rem.filter((m) => !others.includes(m));
     setRemaining(rem);
+    savePool(rem);
     setCorrect(pick.title);
     setOptions(shuffle([pick.title, ...others.map((m) => m.title)]));
     const path = encodeURIComponent(pick.backdrop_path || "");
@@ -158,6 +183,7 @@ export default function Game() {
     setGameOver(false);
     setLives(3);
     setRemaining([]);
+    savePool([]);
     await loadBatch();
     startRound();
   }
