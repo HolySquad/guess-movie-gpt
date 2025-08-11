@@ -1,4 +1,5 @@
 import Game from "@/components/Game";
+import Link from "next/link";
 
 export default function Page() {
   return (
@@ -8,6 +9,9 @@ export default function Page() {
         <p className="text-gray-300">Can you guess the movie from a single backdrop?</p>
       </div>
       <Game />
+      <Link href="/highscores" className="underline">
+        View High Scores
+      </Link>
     </main>
   );
 }
