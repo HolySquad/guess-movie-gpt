@@ -17,6 +17,7 @@ export default function Game() {
   const [imgUrl, setImgUrl] = useState<string>("");
   const [options, setOptions] = useState<string[]>([]);
   const [correct, setCorrect] = useState<string>("");
+  const [currentMovie, setCurrentMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string>("");
   const [showAnswer, setShowAnswer] = useState(false);
@@ -27,6 +28,9 @@ export default function Game() {
     { name: string; score: number; created_at: string }[]
   >([]);
   const [lives, setLives] = useState(3);
+  const [missed, setMissed] = useState<
+    { id: number; title: string; rating: number; imdb_id: string | null }[]
+  >([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   async function loadBatch() {
@@ -92,6 +96,7 @@ export default function Game() {
     rem = rem.filter((m) => !others.includes(m));
     setRemaining(rem);
     setCorrect(pick.title);
+    setCurrentMovie(pick);
     setOptions(shuffle([pick.title, ...others.map((m) => m.title)]));
     const path = encodeURIComponent(pick.backdrop_path || "");
     const url = `/api/img?path=${path}&w=1280`;
@@ -100,7 +105,17 @@ export default function Game() {
     setTimeout(() => setLoading(false), 150);
   }
 
-  function handleMistake() {
+  async function handleMistake() {
+    if (currentMovie) {
+      try {
+        const details = await fetch(
+          `/api/tmdb/movie/${currentMovie.id}`
+        ).then((r) => r.json());
+        setMissed((prev) => [...prev, details]);
+      } catch {
+        // ignore
+      }
+    }
     const nextLives = lives - 1;
     setLives(nextLives);
     if (nextLives <= 0) {
@@ -174,6 +189,8 @@ export default function Game() {
     setGameOver(false);
     setLives(3);
     setRemaining([]);
+    setMissed([]);
+    setCurrentMovie(null);
     await loadBatch();
     startRound();
   }
@@ -215,6 +232,29 @@ export default function Game() {
             </li>
           ))}
         </ol>
+        {missed.length > 0 && (
+          <div className="mt-4">
+            <h3 className="font-semibold">Missed Movies</h3>
+            <ul className="space-y-1 text-sm">
+              {missed.map((m) => (
+                <li key={m.id}>
+                  {m.imdb_id ? (
+                    <a
+                      href={`https://www.imdb.com/title/${m.imdb_id}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      {m.title}
+                    </a>
+                  ) : (
+                    <span>{m.title}</span>
+                  )}{" "}- ⭐ {m.rating ? m.rating.toFixed(1) : "N/A"}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <button className="btn" onClick={restart}>
           Play Again
         </button>
