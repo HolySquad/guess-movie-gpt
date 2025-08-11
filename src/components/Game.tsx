@@ -40,9 +40,9 @@ export default function Game() {
     setTimeLeft(15);
     const pick = source[Math.floor(Math.random() * source.length)];
     setCorrect(pick.title);
-    const names = shuffle(source.map(m => m.title));
-    if (!names.includes(pick.title)) names[0] = pick.title;
-    setOptions(shuffle(names.slice(0, 4)));
+
+    const others = shuffle(source.filter(m => m.id !== pick.id).map(m => m.title)).slice(0, 3);
+    setOptions(shuffle([pick.title, ...others]));
     const path = encodeURIComponent(pick.backdrop_path || "");
     const url = `/api/img?path=${path}&w=1280`;
     setImgUrl(url);
