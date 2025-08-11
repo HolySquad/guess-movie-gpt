@@ -40,13 +40,19 @@ export async function GET(_req: NextRequest) {
         const backdrops = imgData.backdrops || [];
         const pick =
           backdrops[Math.floor(Math.random() * backdrops.length)] || null;
-        return {
-          id: m.id,
-          title: m.title,
-          backdrop_path: pick?.file_path || m.backdrop_path || null,
-        };
+          return {
+            id: m.id,
+            title: m.title,
+            release_date: m.release_date,
+            backdrop_path: pick?.file_path || m.backdrop_path || null,
+          };
       } catch {
-        return { id: m.id, title: m.title, backdrop_path: m.backdrop_path };
+          return {
+            id: m.id,
+            title: m.title,
+            release_date: m.release_date,
+            backdrop_path: m.backdrop_path,
+          };
       }
     })
   );

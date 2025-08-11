@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 
-type Movie = { id: number; title: string; backdrop_path: string | null; };
+type Movie = {
+  id: number;
+  title: string;
+  backdrop_path: string | null;
+  release_date: string;
+};
 type MoviesResponse = { results: Movie[]; };
 
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5); }
@@ -17,6 +22,8 @@ export default function Game() {
   const [imgUrl, setImgUrl] = useState<string>("");
   const [options, setOptions] = useState<string[]>([]);
   const [correct, setCorrect] = useState<string>("");
+  const [year, setYear] = useState("");
+  const [hintUsed, setHintUsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string>("");
   const [showAnswer, setShowAnswer] = useState(false);
@@ -75,6 +82,7 @@ export default function Game() {
   async function startRound() {
     setSelected("");
     setShowAnswer(false);
+    setHintUsed(false);
     let rem = remaining;
     if (rem.length < 4) {
       rem = [...rem, ...(await loadBatch())];
@@ -92,6 +100,7 @@ export default function Game() {
     rem = rem.filter((m) => !others.includes(m));
     setRemaining(rem);
     setCorrect(pick.title);
+    setYear(pick.release_date ? pick.release_date.slice(0, 4) : "");
     setOptions(shuffle([pick.title, ...others.map((m) => m.title)]));
     const path = encodeURIComponent(pick.backdrop_path || "");
     const url = `/api/img?path=${path}&w=1280`;
@@ -108,6 +117,12 @@ export default function Game() {
     } else {
       startRound();
     }
+  }
+
+  function useHint() {
+    if (hintUsed) return;
+    setHintUsed(true);
+    setTimeLeft((t) => Math.max(t - 5, 0));
   }
 
   function guess(title: string) {
@@ -230,6 +245,17 @@ export default function Game() {
             />
           </div>
           <div className="w-10 text-right tabular-nums">{timeLeft}s</div>
+          {hintUsed ? (
+            <span className="ml-2 text-sm">Year: {year}</span>
+          ) : (
+            <button
+              className="btn px-2 py-1 text-xs ml-2"
+              onClick={useHint}
+              disabled={loading}
+            >
+              Hint (-5s)
+            </button>
+          )}
         </div>
       </div>
 
