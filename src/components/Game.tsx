@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 
 type Movie = { id: number; title: string; backdrop_path: string | null; };
 type MoviesResponse = { results: Movie[]; };
@@ -22,7 +23,9 @@ export default function Game() {
   const [nickname, setNickname] = useState("");
   const [tempName, setTempName] = useState("");
   const [gameOver, setGameOver] = useState(false);
-  const [highScores, setHighScores] = useState<{ name: string; score: number }[]>([]);
+  const [highScores, setHighScores] = useState<
+    { name: string; score: number; created_at: string }[]
+  >([]);
   const [lives, setLives] = useState(3);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -38,10 +41,19 @@ export default function Game() {
   useEffect(() => {
     const storedName = localStorage.getItem("nickname");
     if (storedName) setNickname(storedName);
-    const storedScores = localStorage.getItem("highScores");
-    if (storedScores) setHighScores(JSON.parse(storedScores));
     loadBatch();
+    fetchScores();
   }, []);
+
+  async function fetchScores() {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from("scores")
+      .select("name, score, created_at")
+      .order("score", { ascending: false })
+      .limit(10);
+    if (data) setHighScores(data);
+  }
 
   useEffect(() => {
     if (!nickname || loading || gameOver) return;
@@ -120,12 +132,17 @@ export default function Game() {
     }, delay);
   }
 
-  function endGame() {
+  async function endGame() {
     if (timerRef.current) clearInterval(timerRef.current);
     setGameOver(true);
-    const updated = [...highScores, { name: nickname, score }].sort((a, b) => b.score - a.score);
-    setHighScores(updated);
-    localStorage.setItem("highScores", JSON.stringify(updated));
+    if (supabase) {
+      await supabase.from("scores").insert({
+        name: nickname,
+        score,
+        created_at: new Date().toISOString(),
+      });
+      await fetchScores();
+    }
   }
 
   function submitNickname() {
@@ -170,9 +187,12 @@ export default function Game() {
         <h3 className="font-semibold">High Scores</h3>
         <ol className="space-y-1">
           {highScores.map((hs, idx) => (
-            <li key={idx} className="flex justify-between">
-              <span>{hs.name}</span>
+            <li key={idx} className="flex justify-between gap-2 text-sm">
+              <span className="font-medium">{hs.name}</span>
               <span>{hs.score}</span>
+              <span className="text-gray-400">
+                {new Date(hs.created_at).toLocaleDateString()}
+              </span>
             </li>
           ))}
         </ol>
