@@ -136,11 +136,27 @@ export default function Game() {
     if (timerRef.current) clearInterval(timerRef.current);
     setGameOver(true);
     if (supabase) {
-      await supabase.from("scores").insert({
-        name: nickname,
-        score,
-        created_at: new Date().toISOString(),
-      });
+      const { data: existing } = await supabase
+        .from("scores")
+        .select("id, score")
+        .eq("name", nickname)
+        .order("score", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!existing) {
+        await supabase.from("scores").insert({
+          name: nickname,
+          score,
+          created_at: new Date().toISOString(),
+        });
+      } else if (score > existing.score) {
+        await supabase
+          .from("scores")
+          .update({ score, created_at: new Date().toISOString() })
+          .eq("id", existing.id);
+      }
+
       await fetchScores();
     }
   }
