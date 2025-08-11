@@ -18,7 +18,7 @@ export default function HighScoresPage() {
         .from("scores")
         .select("name, score, created_at")
         .order("score", { ascending: false })
-        .limit(10);
+        .limit(30);
       const list = data ?? [];
       setScores(list);
 
