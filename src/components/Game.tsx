@@ -205,7 +205,7 @@ export default function Game() {
 
   return (
     <div className="w-full max-w-4xl">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-4">
         <div className="flex items-center gap-4">
           <div className="text-lg font-semibold">
             Score: <span className="text-emerald-400">{score}</span>
@@ -218,9 +218,9 @@ export default function Game() {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="text-lg font-semibold">Time:</div>
-          <div className="w-48 h-3 rounded-full bg-gray-800 overflow-hidden">
+          <div className="flex-1 sm:w-48 h-3 rounded-full bg-gray-800 overflow-hidden">
             <motion.div
               key={question}
               className="h-full bg-rose-500"
@@ -261,7 +261,7 @@ export default function Game() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {options.map((opt) => (
           <button
             key={opt}
