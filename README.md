@@ -21,5 +21,6 @@ npm install
 npm run dev
 ```
 Open http://localhost:3000
-Visit http://localhost:3000/highscores for the global high score table.
+Visit http://localhost:3000/highscores for the top 10 table.
+Your own result and position are shown even if you're outside the top list.
 
