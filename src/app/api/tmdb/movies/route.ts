@@ -8,19 +8,23 @@ export async function GET(_req: NextRequest) {
       { status: 500 }
     );
 
-  // Discover popular movies
+  // Discover movies from a broad year range
   const discoverUrl = new URL("https://api.themoviedb.org/3/discover/movie");
   discoverUrl.searchParams.set("api_key", apiKey);
   discoverUrl.searchParams.set("language", "en-US");
   discoverUrl.searchParams.set("sort_by", "popularity.desc");
   discoverUrl.searchParams.set("include_adult", "false");
   discoverUrl.searchParams.set("include_video", "false");
-  discoverUrl.searchParams.set("page", "1");
+  // random page to randomize results (TMDB limits to 500 pages)
+  const page = Math.floor(Math.random() * 500) + 1;
+  discoverUrl.searchParams.set("page", page.toString());
   discoverUrl.searchParams.set("with_original_language", "en");
+  discoverUrl.searchParams.set("primary_release_date.gte", "1960-01-01");
+  discoverUrl.searchParams.set("primary_release_date.lte", "2025-12-31");
 
   const resp = await fetch(discoverUrl.toString(), { cache: "no-store" });
   const data = await resp.json();
-  const movies = data.results?.slice(0, 50) ?? [];
+  const movies = data.results?.slice(0, 20) ?? [];
 
   // For each movie fetch a random backdrop (actual frame)
   const withFrames = await Promise.all(
