@@ -19,6 +19,7 @@ export default function Game() {
   const [correct, setCorrect] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string>("");
+  const [showAnswer, setShowAnswer] = useState(false);
   const [nickname, setNickname] = useState("");
   const [tempName, setTempName] = useState("");
   const [gameOver, setGameOver] = useState(false);
@@ -62,6 +63,8 @@ export default function Game() {
   }, [nickname, remaining, question]);
 
   async function startRound() {
+    setSelected("");
+    setShowAnswer(false);
     let rem = remaining;
     let fullPool = pool;
     if (rem.length === 0) {
@@ -103,18 +106,23 @@ export default function Game() {
 
   function guess(title: string) {
     if (loading) return;
-    if (title === correct) {
-      if (timerRef.current) clearInterval(timerRef.current);
-      setSelected(title);
+    if (timerRef.current) clearInterval(timerRef.current);
+    setSelected(title);
+    setShowAnswer(true);
+    setLoading(true);
+    const isCorrect = title === correct;
+    if (isCorrect) {
       setScore((s) => s + 1);
-      setLoading(true);
-      setTimeout(() => {
-        startRound();
-        setSelected("");
-      }, 3000);
-    } else {
-      handleMistake();
     }
+    setTimeout(() => {
+      if (isCorrect) {
+        startRound();
+      } else {
+        handleMistake();
+      }
+      setShowAnswer(false);
+      setSelected("");
+    }, 3000);
   }
 
   function endGame() {
@@ -244,8 +252,10 @@ export default function Game() {
             onClick={() => guess(opt)}
             disabled={loading}
             className={`btn text-sm md:text-base ${
-              selected === opt && opt === correct
+              showAnswer && opt === correct
                 ? "!bg-green-600 hover:!bg-green-500"
+                : showAnswer && selected === opt
+                ? "!bg-red-600 hover:!bg-red-500"
                 : ""
             }`}
           >
