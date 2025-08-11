@@ -9,7 +9,6 @@ type MoviesResponse = { results: Movie[]; };
 function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 0.5); }
 
 export default function Game() {
-  const [pool, setPool] = useState<Movie[]>([]);
   const [remaining, setRemaining] = useState<Movie[]>([]);
   const [score, setScore] = useState(0);
   const [question, setQuestion] = useState(0);
@@ -18,6 +17,8 @@ export default function Game() {
   const [options, setOptions] = useState<string[]>([]);
   const [correct, setCorrect] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<string>("");
+  const [showAnswer, setShowAnswer] = useState(false);
   const [nickname, setNickname] = useState("");
   const [tempName, setTempName] = useState("");
   const [gameOver, setGameOver] = useState(false);
@@ -30,8 +31,7 @@ export default function Game() {
       r.json()
     );
     const clean = data.results.filter((m) => m.backdrop_path);
-    setPool((prev) => [...prev, ...clean]);
-    setRemaining(clean);
+    setRemaining((prev) => [...prev, ...clean]);
     return clean;
   }
 
@@ -61,28 +61,26 @@ export default function Game() {
   }, [nickname, remaining, question]);
 
   async function startRound() {
+    setSelected("");
+    setShowAnswer(false);
     let rem = remaining;
-    let fullPool = pool;
-    if (rem.length === 0) {
-      rem = await loadBatch();
-      if (!rem.length) {
+    if (rem.length < 4) {
+      rem = [...rem, ...(await loadBatch())];
+      if (rem.length < 4) {
         endGame();
         return;
       }
-      fullPool = [...pool, ...rem];
     }
     setLoading(true);
     setTimeLeft(15);
     const idx = Math.floor(Math.random() * rem.length);
     const pick = rem[idx];
     rem = rem.filter((_, i) => i !== idx);
+    const others = shuffle(rem).slice(0, 3);
+    rem = rem.filter((m) => !others.includes(m));
     setRemaining(rem);
     setCorrect(pick.title);
-
-    const others = shuffle(
-      fullPool.filter((m) => m.id !== pick.id).map((m) => m.title)
-    ).slice(0, 3);
-    setOptions(shuffle([pick.title, ...others]));
+    setOptions(shuffle([pick.title, ...others.map((m) => m.title)]));
     const path = encodeURIComponent(pick.backdrop_path || "");
     const url = `/api/img?path=${path}&w=1280`;
     setImgUrl(url);
@@ -101,12 +99,25 @@ export default function Game() {
   }
 
   function guess(title: string) {
-    if (title === correct) {
+    if (loading) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+    setSelected(title);
+    setShowAnswer(true);
+    setLoading(true);
+    const isCorrect = title === correct;
+    if (isCorrect) {
       setScore((s) => s + 1);
-      startRound();
-    } else {
-      handleMistake();
     }
+    const delay = isCorrect ? 80 : 3000;
+    setTimeout(() => {
+      if (isCorrect) {
+        startRound();
+      } else {
+        handleMistake();
+      }
+      setShowAnswer(false);
+      setSelected("");
+    }, delay);
   }
 
   function endGame() {
@@ -123,13 +134,14 @@ export default function Game() {
     setNickname(tempName.trim());
   }
 
-  function restart() {
+  async function restart() {
     setScore(0);
     setQuestion(0);
     setTimeLeft(15);
     setGameOver(false);
     setLives(3);
-    setRemaining(pool);
+    setRemaining([]);
+    await loadBatch();
     startRound();
   }
   if (!nickname) {
@@ -190,10 +202,10 @@ export default function Game() {
           <div className="text-lg font-semibold">Time:</div>
           <div className="w-48 h-3 rounded-full bg-gray-800 overflow-hidden">
             <motion.div
-              key={timeLeft}
+              key={question}
               className="h-full bg-indigo-500"
               initial={{ width: "100%" }}
-              animate={{ width: `${(timeLeft / 15) * 100}%` }}
+              animate={{ width: `${(Math.max(timeLeft - 1, 0) / 15) * 100}%` }}
               transition={{ ease: "linear", duration: 1 }}
             />
           </div>
@@ -231,7 +243,18 @@ export default function Game() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {options.map((opt) => (
-          <button key={opt} onClick={() => guess(opt)} className="btn text-sm md:text-base">
+          <button
+            key={opt}
+            onClick={() => guess(opt)}
+            disabled={loading}
+            className={`btn text-sm md:text-base ${
+              showAnswer && opt === correct
+                ? "!bg-green-600 hover:!bg-green-500"
+                : showAnswer && selected === opt
+                ? "!bg-red-600 hover:!bg-red-500"
+                : ""
+            }`}
+          >
             {opt}
           </button>
         ))}
