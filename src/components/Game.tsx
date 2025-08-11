@@ -203,7 +203,7 @@ export default function Game() {
           <div className="w-48 h-3 rounded-full bg-gray-800 overflow-hidden">
             <motion.div
               key={question}
-              className="h-full bg-indigo-500"
+              className="h-full bg-rose-500"
               initial={{ width: "100%" }}
               animate={{ width: `${(Math.max(timeLeft - 1, 0) / 15) * 100}%` }}
               transition={{ ease: "linear", duration: 1 }}
@@ -220,7 +220,7 @@ export default function Game() {
               <motion.img
                 key={imgUrl}
                 src={imgUrl}
-                alt="Movie backdrop"
+                alt="Film backdrop"
                 className="w-full h-full object-cover"
                 initial={{ opacity: 0.0, scale: 1.02 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -260,9 +260,6 @@ export default function Game() {
         ))}
       </div>
 
-      <div className="mt-6 text-xs text-gray-500">
-        This product uses the TMDb API but is not endorsed or certified by TMDb.
-      </div>
     </div>
   );
 }
