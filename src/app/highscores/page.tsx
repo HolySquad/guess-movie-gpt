@@ -55,30 +55,30 @@ export default function HighScoresPage() {
     current && scores.findIndex((s) => s.name === current.name) === -1;
 
   return (
-    <main className="min-h-screen p-6 flex flex-col items-center gap-6">
+    <main className="min-h-screen p-4 sm:p-6 flex flex-col items-center gap-6">
       <h1 className="text-3xl font-bold">High Scores</h1>
       <ol className="w-full max-w-md space-y-2">
         {scores.map((item, idx) => (
           <li
             key={idx}
-            className={`flex items-center justify-between text-sm ${
+            className={`grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_1fr_auto_auto] items-center gap-2 text-sm ${
               current?.name === item.name ? "text-emerald-400" : ""
             }`}
           >
-            <span className="w-6 text-left">{idx + 1}</span>
-            <span className="flex-1 font-medium">{item.name}</span>
-            <span className="w-10 text-right">{item.score}</span>
-            <span className="w-24 text-right text-gray-400">
+            <span>{idx + 1}</span>
+            <span className="font-medium truncate">{item.name}</span>
+            <span className="text-right">{item.score}</span>
+            <span className="text-right text-gray-400 hidden sm:block">
               {new Date(item.created_at).toLocaleDateString()}
             </span>
           </li>
         ))}
         {showExtraRow && current && (
-          <li className="flex items-center justify-between text-sm border-t border-gray-700 pt-2 mt-2">
-            <span className="w-6 text-left">{current.rank}</span>
-            <span className="flex-1 font-medium">{current.name}</span>
-            <span className="w-10 text-right">{current.score}</span>
-            <span className="w-24 text-right text-gray-400">
+          <li className="grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_1fr_auto_auto] items-center gap-2 text-sm border-t border-gray-700 pt-2 mt-2">
+            <span>{current.rank}</span>
+            <span className="font-medium truncate">{current.name}</span>
+            <span className="text-right">{current.score}</span>
+            <span className="text-right text-gray-400 hidden sm:block">
               {new Date(current.created_at).toLocaleDateString()}
             </span>
           </li>
