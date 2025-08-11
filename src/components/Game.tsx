@@ -114,6 +114,7 @@ export default function Game() {
     if (isCorrect) {
       setScore((s) => s + 1);
     }
+    const delay = isCorrect ? 100 : 3000;
     setTimeout(() => {
       if (isCorrect) {
         startRound();
@@ -122,7 +123,7 @@ export default function Game() {
       }
       setShowAnswer(false);
       setSelected("");
-    }, 3000);
+    }, delay);
   }
 
   function endGame() {
@@ -206,10 +207,10 @@ export default function Game() {
           <div className="text-lg font-semibold">Time:</div>
           <div className="w-48 h-3 rounded-full bg-gray-800 overflow-hidden">
             <motion.div
-              key={timeLeft}
+              key={question}
               className="h-full bg-indigo-500"
               initial={{ width: "100%" }}
-              animate={{ width: `${(timeLeft / 15) * 100}%` }}
+              animate={{ width: `${(Math.max(timeLeft - 1, 0) / 15) * 100}%` }}
               transition={{ ease: "linear", duration: 1 }}
             />
           </div>
