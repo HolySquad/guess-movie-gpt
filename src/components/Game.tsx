@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { Analytics } from "@vercel/analytics/next"
 
 type Movie = { id: number; title: string; backdrop_path: string | null; };
 type MoviesResponse = { results: Movie[]; };
@@ -208,7 +207,6 @@ export default function Game() {
     <div className="w-full max-w-4xl">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
-          <Analytics></Analytics>
           <div className="text-lg font-semibold">
             Score: <span className="text-emerald-400">{score}</span>
           </div>
