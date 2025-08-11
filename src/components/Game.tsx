@@ -22,24 +22,31 @@ export default function Game() {
   const [tempName, setTempName] = useState("");
   const [gameOver, setGameOver] = useState(false);
   const [highScores, setHighScores] = useState<{ name: string; score: number }[]>([]);
+  const [lives, setLives] = useState(3);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  async function loadBatch() {
+    const data: MoviesResponse = await fetch("/api/tmdb/movies").then((r) =>
+      r.json()
+    );
+    const clean = data.results.filter((m) => m.backdrop_path);
+    setPool((prev) => [...prev, ...clean]);
+    setRemaining(clean);
+    return clean;
+  }
 
   useEffect(() => {
     const storedName = localStorage.getItem("nickname");
     if (storedName) setNickname(storedName);
     const storedScores = localStorage.getItem("highScores");
     if (storedScores) setHighScores(JSON.parse(storedScores));
-    fetch("/api/tmdb/movies").then((r) => r.json()).then((data: MoviesResponse) => {
-      const clean = data.results.filter((m) => m.backdrop_path);
-      setPool(clean);
-      setRemaining(clean);
-    });
+    loadBatch();
   }, []);
 
   useEffect(() => {
     if (!nickname || loading || gameOver) return;
     if (timeLeft <= 0) {
-      startRound();
+      handleMistake();
       return;
     }
     timerRef.current && clearInterval(timerRef.current);
@@ -53,19 +60,28 @@ export default function Game() {
     if (nickname && remaining.length && question === 0) startRound();
   }, [nickname, remaining, question]);
 
-  function startRound() {
-    if (question >= 20 || remaining.length === 0) {
-      endGame();
-      return;
+  async function startRound() {
+    let rem = remaining;
+    let fullPool = pool;
+    if (rem.length === 0) {
+      rem = await loadBatch();
+      if (!rem.length) {
+        endGame();
+        return;
+      }
+      fullPool = [...pool, ...rem];
     }
     setLoading(true);
     setTimeLeft(15);
-    const idx = Math.floor(Math.random() * remaining.length);
-    const pick = remaining[idx];
-    setRemaining((prev) => prev.filter((_, i) => i !== idx));
+    const idx = Math.floor(Math.random() * rem.length);
+    const pick = rem[idx];
+    rem = rem.filter((_, i) => i !== idx);
+    setRemaining(rem);
     setCorrect(pick.title);
 
-    const others = shuffle(pool.filter((m) => m.id !== pick.id).map((m) => m.title)).slice(0, 3);
+    const others = shuffle(
+      fullPool.filter((m) => m.id !== pick.id).map((m) => m.title)
+    ).slice(0, 3);
     setOptions(shuffle([pick.title, ...others]));
     const path = encodeURIComponent(pick.backdrop_path || "");
     const url = `/api/img?path=${path}&w=1280`;
@@ -74,12 +90,27 @@ export default function Game() {
     setTimeout(() => setLoading(false), 150);
   }
 
+  function handleMistake() {
+    const nextLives = lives - 1;
+    setLives(nextLives);
+    if (nextLives <= 0) {
+      endGame();
+    } else {
+      startRound();
+    }
+  }
+
   function guess(title: string) {
-    if (title === correct) setScore((s) => s + 1);
-    startRound();
+    if (title === correct) {
+      setScore((s) => s + 1);
+      startRound();
+    } else {
+      handleMistake();
+    }
   }
 
   function endGame() {
+    if (timerRef.current) clearInterval(timerRef.current);
     setGameOver(true);
     const updated = [...highScores, { name: nickname, score }].sort((a, b) => b.score - a.score);
     setHighScores(updated);
@@ -97,6 +128,7 @@ export default function Game() {
     setQuestion(0);
     setTimeLeft(15);
     setGameOver(false);
+    setLives(3);
     setRemaining(pool);
     startRound();
   }
@@ -142,8 +174,17 @@ export default function Game() {
   return (
     <div className="w-full max-w-4xl">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-lg font-semibold">
-          Score: <span className="text-emerald-400">{score}</span>
+        <div className="flex items-center gap-4">
+          <div className="text-lg font-semibold">
+            Score: <span className="text-emerald-400">{score}</span>
+          </div>
+          <div className="flex gap-1">
+            {Array.from({ length: 3 }, (_, i) => (
+              <span key={i} className="text-red-500">
+                {i < lives ? "❤️" : "🤍"}
+              </span>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="text-lg font-semibold">Time:</div>
