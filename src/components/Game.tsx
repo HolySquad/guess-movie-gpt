@@ -207,7 +207,7 @@ export default function Game() {
               key={idx}
               className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_auto_auto] items-center gap-2 text-sm"
             >
-              <span className="font-medium truncate">{hs.name}</span>
+              <span className="font-medium truncate text-left">{hs.name}</span>
               <span className="text-right tabular-nums w-12">{hs.score}</span>
               <span className="text-gray-400 text-right hidden sm:block">
                 {new Date(hs.created_at).toLocaleDateString()}
