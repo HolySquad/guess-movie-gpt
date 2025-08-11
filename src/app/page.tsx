@@ -4,7 +4,7 @@ export default function Page() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 gap-6">
       <div className="text-center space-y-2">
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">🎬 Guess the Movie</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">🎬 What The Film</h1>
         <p className="text-gray-300">TMDb backdrops via server proxy (no CORS headaches)</p>
       </div>
       <Game />

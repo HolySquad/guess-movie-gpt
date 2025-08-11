@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Guess the Movie — TMDb",
-  description: "Guess the movie by its backdrop — TMDb images proxied to avoid CORS",
+  title: "What The Film — TMDb",
+  description: "Guess the film by its backdrop — TMDb images proxied to avoid CORS",
 };
 
 import "./globals.css";
