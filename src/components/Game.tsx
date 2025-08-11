@@ -51,7 +51,7 @@ export default function Game() {
       .from("scores")
       .select("name, score, created_at")
       .order("score", { ascending: false })
-      .limit(10);
+      .limit(30);
     if (data) setHighScores(data);
   }
 
