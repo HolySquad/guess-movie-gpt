@@ -18,6 +18,7 @@ export default function Game() {
   const [options, setOptions] = useState<string[]>([]);
   const [correct, setCorrect] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<string>("");
   const [nickname, setNickname] = useState("");
   const [tempName, setTempName] = useState("");
   const [gameOver, setGameOver] = useState(false);
@@ -101,9 +102,16 @@ export default function Game() {
   }
 
   function guess(title: string) {
+    if (loading) return;
     if (title === correct) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setSelected(title);
       setScore((s) => s + 1);
-      startRound();
+      setLoading(true);
+      setTimeout(() => {
+        startRound();
+        setSelected("");
+      }, 3000);
     } else {
       handleMistake();
     }
@@ -231,7 +239,16 @@ export default function Game() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {options.map((opt) => (
-          <button key={opt} onClick={() => guess(opt)} className="btn text-sm md:text-base">
+          <button
+            key={opt}
+            onClick={() => guess(opt)}
+            disabled={loading}
+            className={`btn text-sm md:text-base ${
+              selected === opt && opt === correct
+                ? "!bg-green-600 hover:!bg-green-500"
+                : ""
+            }`}
+          >
             {opt}
           </button>
         ))}
