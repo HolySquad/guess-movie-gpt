@@ -260,9 +260,6 @@ export default function Game() {
         ))}
       </div>
 
-      <div className="mt-6 text-xs text-gray-500">
-        This product uses the TMDb API but is not endorsed or certified by TMDb.
-      </div>
     </div>
   );
 }

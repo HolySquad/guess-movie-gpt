@@ -1,11 +1,11 @@
-# 🎬 What The Film — TMDb (Vercel-ready)
+# 🎬 What The Film (Vercel-ready)
 
 Vercel-ready Next.js app. Files are at repository root (no nested folder).
 
 ## Deploy to Vercel
 1. Create a new Vercel project from this repo/zip.
 2. In **Project Settings → Environment Variables**, add:
-   - `TMDB_API_KEY` = your TMDb v3 key
+   - `TMDB_API_KEY` = your API key
 3. Framework should auto-detect as **Next.js**. If needed:
    - Framework Preset: Next.js
    - Build Command: `npm run build`
@@ -15,10 +15,9 @@ Vercel-ready Next.js app. Files are at repository root (no nested folder).
 ## Run locally
 ```bash
 cp .env.local.example .env.local
-# put your TMDB_API_KEY in .env.local
+# put your API key in .env.local
 npm install
 npm run dev
 ```
 Open http://localhost:3000
 
-This product uses the TMDb API but is not endorsed or certified by TMDb.
