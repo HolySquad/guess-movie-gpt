@@ -10,42 +10,67 @@ function shuffle<T>(arr: T[]): T[] { return [...arr].sort(() => Math.random() - 
 
 export default function Game() {
   const [pool, setPool] = useState<Movie[]>([]);
+  const [remaining, setRemaining] = useState<Movie[]>([]);
   const [score, setScore] = useState(0);
+  const [question, setQuestion] = useState(0);
   const [timeLeft, setTimeLeft] = useState(15);
   const [imgUrl, setImgUrl] = useState<string>("");
   const [options, setOptions] = useState<string[]>([]);
   const [correct, setCorrect] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [nickname, setNickname] = useState("");
+  const [tempName, setTempName] = useState("");
+  const [gameOver, setGameOver] = useState(false);
+  const [highScores, setHighScores] = useState<{ name: string; score: number }[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    const storedName = localStorage.getItem("nickname");
+    if (storedName) setNickname(storedName);
+    const storedScores = localStorage.getItem("highScores");
+    if (storedScores) setHighScores(JSON.parse(storedScores));
     fetch("/api/tmdb/movies").then((r) => r.json()).then((data: MoviesResponse) => {
-      const clean = data.results.filter(m => m.backdrop_path);
+      const clean = data.results.filter((m) => m.backdrop_path);
       setPool(clean);
-      startRound(clean);
+      setRemaining(clean);
     });
   }, []);
 
   useEffect(() => {
-    if (loading) return;
-    if (timeLeft <= 0) { startRound(pool); return; }
+    if (!nickname || loading || gameOver) return;
+    if (timeLeft <= 0) {
+      startRound();
+      return;
+    }
     timerRef.current && clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [timeLeft, loading, pool]);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [timeLeft, loading, nickname, gameOver]);
 
-  function startRound(source: Movie[] = pool) {
-    if (!source.length) return;
+  useEffect(() => {
+    if (nickname && remaining.length && question === 0) startRound();
+  }, [nickname, remaining, question]);
+
+  function startRound() {
+    if (question >= 20 || remaining.length === 0) {
+      endGame();
+      return;
+    }
     setLoading(true);
     setTimeLeft(15);
-    const pick = source[Math.floor(Math.random() * source.length)];
+    const idx = Math.floor(Math.random() * remaining.length);
+    const pick = remaining[idx];
+    setRemaining((prev) => prev.filter((_, i) => i !== idx));
     setCorrect(pick.title);
 
-    const others = shuffle(source.filter(m => m.id !== pick.id).map(m => m.title)).slice(0, 3);
+    const others = shuffle(pool.filter((m) => m.id !== pick.id).map((m) => m.title)).slice(0, 3);
     setOptions(shuffle([pick.title, ...others]));
     const path = encodeURIComponent(pick.backdrop_path || "");
     const url = `/api/img?path=${path}&w=1280`;
     setImgUrl(url);
+    setQuestion((q) => q + 1);
     setTimeout(() => setLoading(false), 150);
   }
 
@@ -54,10 +79,72 @@ export default function Game() {
     startRound();
   }
 
+  function endGame() {
+    setGameOver(true);
+    const updated = [...highScores, { name: nickname, score }].sort((a, b) => b.score - a.score);
+    setHighScores(updated);
+    localStorage.setItem("highScores", JSON.stringify(updated));
+  }
+
+  function submitNickname() {
+    if (!tempName.trim()) return;
+    localStorage.setItem("nickname", tempName.trim());
+    setNickname(tempName.trim());
+  }
+
+  function restart() {
+    setScore(0);
+    setQuestion(0);
+    setTimeLeft(15);
+    setGameOver(false);
+    setRemaining(pool);
+    startRound();
+  }
+  if (!nickname) {
+    return (
+      <div className="w-full max-w-sm mx-auto flex flex-col gap-4">
+        <input
+          className="input"
+          placeholder="Enter nickname"
+          value={tempName}
+          onChange={(e) => setTempName(e.target.value)}
+        />
+        <button className="btn" onClick={submitNickname}>
+          Start
+        </button>
+      </div>
+    );
+  }
+
+  if (gameOver) {
+    return (
+      <div className="w-full max-w-md mx-auto text-center space-y-4">
+        <h2 className="text-2xl font-bold">Game Over!</h2>
+        <p>
+          Your score: <span className="text-emerald-400">{score}</span>
+        </p>
+        <h3 className="font-semibold">High Scores</h3>
+        <ol className="space-y-1">
+          {highScores.map((hs, idx) => (
+            <li key={idx} className="flex justify-between">
+              <span>{hs.name}</span>
+              <span>{hs.score}</span>
+            </li>
+          ))}
+        </ol>
+        <button className="btn" onClick={restart}>
+          Play Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-lg font-semibold">Score: <span className="text-emerald-400">{score}</span></div>
+        <div className="text-lg font-semibold">
+          Score: <span className="text-emerald-400">{score}</span>
+        </div>
         <div className="flex items-center gap-2">
           <div className="text-lg font-semibold">Time:</div>
           <div className="w-48 h-3 rounded-full bg-gray-800 overflow-hidden">
@@ -65,7 +152,7 @@ export default function Game() {
               key={timeLeft}
               className="h-full bg-indigo-500"
               initial={{ width: "100%" }}
-              animate={{ width: `${(timeLeft/15)*100}%` }}
+              animate={{ width: `${(timeLeft / 15) * 100}%` }}
               transition={{ ease: "linear", duration: 1 }}
             />
           </div>
