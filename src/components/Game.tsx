@@ -102,7 +102,6 @@ export default function Game() {
     const url = `/api/img?path=${path}&w=1280`;
     setImgUrl(url);
     setQuestion((q) => q + 1);
-    setTimeout(() => setLoading(false), 150);
   }
 
   async function handleMistake() {
@@ -305,6 +304,8 @@ export default function Game() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.35 }}
+                onLoad={() => setLoading(false)}
+                onError={() => setLoading(false)}
               />
             ) : (
               <motion.div
